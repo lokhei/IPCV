@@ -17,7 +17,7 @@ int main() {
         uchar blue = image.at<Vec3b>(y, x)[0];
         uchar green = image.at<Vec3b>(y, x)[1];
         uchar red = image.at<Vec3b>(y, x)[2];
-        if (blue>200){
+        if (blue < 120 && red > 200 && green < 100 ){ //highlight nose
             image.at<Vec3b>(y, x)[0]= 255;
             image.at<Vec3b>(y, x)[1]= 255;
             image.at<Vec3b>(y, x)[2]= 255;
@@ -32,10 +32,14 @@ int main() {
 
   //Save thresholded image
   imwrite("ColourThreshold.jpg", image);
-    
-    cvtColor(frame, frame_HSV, COLOR_BGR2HSV);
-    // Detect the object based on HSV Range Values
-    inRange(frame_HSV, Scalar(low_H, low_S, low_V), Scalar(high_H, high_S, high_V), frame_threshold);
 
+  // using in-built function inRange
+  Mat image2 = imread("mandrillRGB.jpg", 1);
+
+  Mat mask;
+  inRange(image2,  cv::Scalar(0, 0, 200),  cv::Scalar(120, 100, 255), mask);
+  imwrite("ColourThresholdFunction.jpg", mask);
+
+    
   return 0;
 }
