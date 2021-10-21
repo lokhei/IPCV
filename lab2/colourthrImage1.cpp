@@ -26,8 +26,8 @@ int main() {
     for(int x=0; x<image_copy.cols; x++) {
       uchar pixelRed = image_copy.at<Vec3b>(y,x)[2];
       int new_x = (x+32) % image_copy.cols;
-      int new_y = (y+32) % image_copy.rows;
-      image.at<Vec3b>(new_y,new_x)[2] = pixelRed;
+      int new_y = (y+32)% image_copy.rows;
+        image.at<Vec3b>(new_y,new_x)[2] = pixelRed;
     }
   }
   //Save thresholded image

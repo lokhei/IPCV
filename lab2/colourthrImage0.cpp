@@ -38,6 +38,7 @@ int main() {
 
    
     imwrite("reconstructed.jpg", image);
-  
+
+
     return 0;
 }
