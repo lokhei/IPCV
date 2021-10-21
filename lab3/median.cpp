@@ -29,9 +29,14 @@ int main( int argc, char** argv )
     cvtColor( image, gray_image, CV_BGR2GRAY );
 
     Mat medCar;
-    median(gray_image,6,medCar);
+    median(gray_image,5,medCar);
 
     imwrite( "median.jpg", medCar );
+
+	//in-built function for median
+	Mat medianOut;
+	medianBlur(image, medianOut, 5);
+    imwrite( "medianFunction.jpg", medianOut);
 
     return 0;
 }
@@ -41,7 +46,8 @@ void median(cv::Mat &input, int size, cv::Mat &output)
 	// intialise the output using the input
 	output.create(input.size(), input.type());
 
-	int radius = (size-1)/2;
+	int radius = (size - 1)/2;
+
 
 	cv::Mat paddedInput;
 	cv::copyMakeBorder( input, paddedInput, 
@@ -60,8 +66,7 @@ void median(cv::Mat &input, int size, cv::Mat &output)
 				}
 			}
 			std::sort(values.begin(), values.end());
-			
-			output.at<uchar>(i,j) = (uchar) values[(values.size())/2];
+			output.at<uchar>(i,j) = (uchar) values[(values.size())/2 ];
 		}
 	}
 }

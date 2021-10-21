@@ -31,26 +31,25 @@ int main( int argc, char** argv )
 	// CONVERT COLOUR, BLUR AND SAVE
 	Mat gray_image;
 	cvtColor( image, gray_image, CV_BGR2GRAY );
+
 	Mat carBlurred;
-	GaussianBlur(gray_image,12,carBlurred);
+	GaussianBlur(gray_image,7,carBlurred);
+
+
+	Mat detail, sharpened;
 
 	// original - blurred
-	Mat carSub;
-	cv::subtract(gray_image, carBlurred, carSub);
+	cv::subtract(gray_image, carBlurred, detail);
+	detail *= 5;
+	cv::add(gray_image, detail, sharpened);
 
 
-	Mat carAdd;
+	sharpened = gray_image + detail;
 
-	cv::add(gray_image, carSub, carAdd);
-
-	carAdd *= 0.8;
-
-
-
-
-	imwrite( "sharp.jpg", carAdd );
+	imwrite( "sharp.jpg", sharpened );
 	return 0;
 }
+
 
 void GaussianBlur(cv::Mat &input, int size, cv::Mat &blurredOutput)
 {
@@ -77,7 +76,7 @@ void GaussianBlur(cv::Mat &input, int size, cv::Mat &blurredOutput)
 		kernelRadiusX, kernelRadiusX, kernelRadiusY, kernelRadiusY,
 		cv::BORDER_REPLICATE );
 
-	// now we can do the convoltion
+	// now we can do the convolution
 	for ( int i = 0; i < input.rows; i++ )
 	{	
 		for( int j = 0; j < input.cols; j++ )

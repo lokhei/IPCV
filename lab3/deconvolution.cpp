@@ -23,7 +23,7 @@ using namespace cv;
  *           The estimated angle of the blur
  *           An estimated noise to signal ratio
  */
-void WienerDeconvoluition(
+void WienerDeconvolution(
 	cv::Mat & input, 
 	cv::Mat &output, 
 	int motionLength, 
@@ -52,7 +52,7 @@ int main( int argc, char** argv )
  Mat recover;
 
  //ADJUST THIS FUNCTION CALL
- WienerDeconvoluition(gray_image,recover,15,3,0.001,0);
+  WienerDeconvolution(gray_image,recover,18,0,0.01,0);
  imwrite( "recover.jpg", recover );
 
  return 0;
@@ -60,7 +60,7 @@ int main( int argc, char** argv )
 
 // THIS FUNCTION PROVIDES AN IMPLEMENTATION OF
 // WIENER DECONVOLUTION FOR YOU
-void WienerDeconvoluition(cv::Mat & input, 
+void WienerDeconvolution(cv::Mat & input, 
 	cv::Mat &output, 
 	int motionLength, 
 	int motionAngle, 
