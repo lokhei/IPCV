@@ -19,8 +19,12 @@ using namespace std;
 using namespace cv;
 
 /** Function Headers */
-void detectAndDisplay( Mat frame );
+void detectAndDisplay( Mat frame, vector<Rect> &faces );
 void read_csv(string name, vector<Rect> &groundTruths, Mat frame );
+float iou(Rect truth, Rect detected);
+float calcFaceCount(vector<Rect> &faces, vector<Rect> &groundTruths, float iou_thres);
+float calcTPR(int faceCount, int truthsSize);
+float f1Score(int faceSize, int truthSize, int faceCount);
 
 
 /** Global variables */
@@ -31,7 +35,7 @@ CascadeClassifier cascade;
 /** @function main */
 int main( int argc, const char** argv )
 {
-       // 1. Read Input Image
+	// 1. Read Input Image
 	Mat frame = imread(argv[1], CV_LOAD_IMAGE_COLOR);
 
 	// 2. Load the Strong Classifier in a structure called `Cascade'
@@ -42,15 +46,26 @@ int main( int argc, const char** argv )
 	read_csv(argv[1], groundTruths, frame);
 
 	// 3. Detect Faces and Display Result
-	detectAndDisplay( frame );
+	vector<Rect> faces;
+	detectAndDisplay(frame, faces);
+	std::cout << "Number of Faces: " << faces.size() << std::endl;
+	//faces successfully detected
+	float faceCount = calcFaceCount(faces, groundTruths, 0.4);
+	std::cout << "Number of faces : " << faceCount << endl;
 
-	
+	float TPR = calcTPR(faceCount, groundTruths.size());
+	std::cout << "TPR: " << TPR << endl;
+
+	float f1 = f1Score(faces.size(), groundTruths.size(), faceCount);
+	std::cout << "F1 Score " << f1 << endl;
 
 	// 4. Save Result Image
 	imwrite( "detected.jpg", frame );
 
 	return 0;
 }
+
+
 vector<string> splitString(string s, string delimiter){
 	vector<string> tokens;
 
@@ -62,21 +77,9 @@ vector<string> splitString(string s, string delimiter){
 		end = s.find(delimiter, start);
 	}
 	tokens.push_back(s.substr(start,end-start));
-/*
-	int position; 
-
-
-	while((position = line.find(delimiter)) != string::npos){
-		tokens.push_back(line.substr(0, position));
-		line.erase(0, position+1);
-	}
-	tokens.push_back(line);
-*/
 	return tokens;
-	
-
-
 }
+
 void read_csv(string filePath, vector<Rect> &groundTruths, Mat frame ){
 
 	ifstream file("labels.csv");
@@ -103,12 +106,48 @@ void read_csv(string filePath, vector<Rect> &groundTruths, Mat frame ){
 	file.close();
 }
 
+float iou(Rect truth, Rect detected){
+	float height = min(truth.y + truth.height, detected.y + detected.height) - max(truth.y, detected.y);
+	float width = min(truth.x + truth.width, detected.x + detected.width) - max(truth.x, detected.x);
+	float intersect = height*width;
+
+	float unionArea = truth.height*truth.width + detected.height*detected.width - intersect;
+
+	return intersect/unionArea;
+}
+
+float calcFaceCount(vector<Rect> &faces, vector<Rect> &groundTruths, float iou_thres){
+	int faceCount = 0;
+	for (int j = 0; j < groundTruths.size(); j++){
+
+		for( int i = 0; i < faces.size(); i++ ){
+			if (iou(groundTruths[j], faces[i]) > iou_thres){
+				faceCount ++;
+				break;
+			}
+		}
+	}
+	return faceCount;
+}
+
+
+
+float calcTPR(int faceCount,  int truthsSize){
+	if (truthsSize == 0) return 0;
+	return faceCount/float(truthsSize);
+}
+
+float f1Score(int faceSize, int truthSize, int faceCount){
+	float fp = faceSize - faceCount;
+	float fn = truthSize - faceCount;
+	float f1 = faceCount/(faceCount+0.5*(fp+fn));
+
+	return f1;
+}
 
 
 /** @function detectAndDisplay */
-void detectAndDisplay( Mat frame )
-{
-	std::vector<Rect> faces;
+void detectAndDisplay( Mat frame, vector<Rect> &faces){
 	Mat frame_gray;
 
 	// 1. Prepare Image by turning it into Grayscale and normalising lighting
@@ -118,10 +157,8 @@ void detectAndDisplay( Mat frame )
 	// 2. Perform Viola-Jones Object Detection 
 	cascade.detectMultiScale( frame_gray, faces, 1.1, 1, 0|CV_HAAR_SCALE_IMAGE, Size(10, 10), Size(300,300) );
 
-       // 3. Print number of Faces found
-	std::cout << faces.size() << std::endl;
 
-       // 4. Draw box around faces found
+	// 4. Draw box around faces found
 	for( int i = 0; i < faces.size(); i++ )
 	{
 		rectangle(frame, Point(faces[i].x, faces[i].y), Point(faces[i].x + faces[i].width, faces[i].y + faces[i].height), Scalar( 0, 255, 0 ), 2);
