@@ -28,7 +28,7 @@ float f1Score(int faceSize, int truthSize, int faceCount);
 
 
 /** Global variables */
-String cascade_name = "frontalface.xml";
+String cascade_name = "NoEntrycascade/cascade.xml";
 CascadeClassifier cascade;
 
 
@@ -51,7 +51,7 @@ int main( int argc, const char** argv )
 	std::cout << "Number of Faces: " << faces.size() << std::endl;
 	//faces successfully detected
 	float faceCount = calcFaceCount(faces, groundTruths, 0.4);
-	std::cout << "Number of faces : " << faceCount << endl;
+	std::cout << "Number of successful faces : " << faceCount << endl;
 
 	float TPR = calcTPR(faceCount, groundTruths.size());
 	std::cout << "TPR: " << TPR << endl;
@@ -82,7 +82,7 @@ vector<string> splitString(string s, string delimiter){
 
 void read_csv(string filePath, vector<Rect> &groundTruths, Mat frame ){
 
-	ifstream file("face_labels.csv");
+	ifstream file("noEntry_labels.csv");
 	string line;
 
 	vector<string> fileName = splitString(filePath, "/");
@@ -109,6 +109,7 @@ void read_csv(string filePath, vector<Rect> &groundTruths, Mat frame ){
 float iou(Rect truth, Rect detected){
 	float height = min(truth.y + truth.height, detected.y + detected.height) - max(truth.y, detected.y);
 	float width = min(truth.x + truth.width, detected.x + detected.width) - max(truth.x, detected.x);
+    if (height < 0 || height < 0) return 0;
 	float intersect = height*width;
 
 	float unionArea = truth.height*truth.width + detected.height*detected.width - intersect;

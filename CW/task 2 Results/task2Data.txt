@@ -1,0 +1,99 @@
+NoEntry0.bmp:
+Number of Faces: 20
+Number of successful faces : 2
+TPR: 1
+F1 Score 0.181818
+
+NoEntry1.bmp:
+Number of Faces: 5
+Number of successful faces : 1
+TPR: 1
+F1 Score 0.333333
+
+NoEntry2.bmp:
+Number of Faces: 9
+Number of successful faces : 1
+TPR: 1
+F1 Score 0.2
+
+NoEntry3.bmp:
+Number of Faces: 9
+Number of successful faces : 2
+TPR: 1
+F1 Score 0.363636
+
+NoEntry4.bmp:
+Number of Faces: 19
+Number of successful faces : 2
+TPR: 1
+F1 Score 0.190476
+
+NoEntry5.bmp:
+Number of Faces: 18
+Number of successful faces : 1
+TPR: 0.1
+F1 Score 0.0714286
+
+NoEntry6.bmp:
+Number of Faces: 8
+Number of successful faces : 1
+TPR: 0.25
+F1 Score 0.166667
+
+NoEntry7.bmp:
+Number of Faces: 5
+Number of successful faces : 0
+TPR: 0
+F1 Score 0
+
+NoEntry8.bmp:
+Number of Faces: 4
+Number of successful faces : 3
+TPR: 0.5
+F1 Score 0.6
+
+NoEntry9.bmp:
+Number of Faces: 5
+Number of successful faces : 1
+TPR: 0.5
+F1 Score 0.285714
+
+NoEntry10.bmp:
+Number of Faces: 5
+Number of successful faces : 2
+TPR: 0.666667
+F1 Score 0.5
+
+NoEntry11bmp:
+Number of Faces: 11
+Number of successful faces : 1
+TPR: 0.5
+F1 Score 0.153846
+
+NoEntry12.bmp:
+Number of Faces: 13
+Number of successful faces : 5
+TPR: 0.625
+F1 Score 0.47619
+
+NoEntry13.bmp:
+Number of Faces: 5
+Number of successful faces : 0
+TPR: 0
+F1 Score 0
+
+NoEntry14.bmp:
+Number of Faces: 7
+Number of successful faces : 1
+TPR: 1
+F1 Score 0.25
+
+NoEntry15.bmp:
+Number of Faces: 6
+Number of successful faces : 2
+TPR: 1
+F1 Score 0.5
+
+
+
+
