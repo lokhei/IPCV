@@ -31,7 +31,7 @@ float calcSignCount(vector<Rect> &signs, vector<Rect> &groundTruths, float iou_t
 float calcTPR(int signCount, int truthsSize);
 float f1Score(int signSize, int truthSize, int signCount);
 vector<string> splitString(string s, string delimiter);
-void drawDetected(Mat image, vector<Rect> &signs, vector<vector<int> > &houghCircle, float iou_thres);
+vector<Rect> drawDetected(Mat image, vector<Rect> &signs, vector<vector<int> > &houghCircle, float iou_thres);
 
 /** Global variables */
 String cascade_name = "NoEntrycascade/cascade.xml";
@@ -89,26 +89,14 @@ int main( int argc, const char** argv ){
     cvtColor( thres_mag, gray_thres, CV_BGR2GRAY );
     threshold(gray_thres, 50, thres_mag);
 
-	string thresName = "hough/thresGrad_" + splitString(fileName[fileName.size()-1], ".")[0] +".jpg";
+	string thresName = "hough/thresMag_" + splitString(fileName[fileName.size()-1], ".")[0] +".jpg";
     imwrite( thresName, thres_mag );
 
 
     // Detect signs and Display Result
 	vector<Rect> detected;
 	detectAndDisplay(image, detected);
-	std::cout << "Number of detected Signs: " << detected.size() << std::endl;
-
-    
-
-	//signs successfully detected
-	float signCount = calcSignCount(detected, groundTruths, 0.4);
-	std::cout << "Number of successful detections : " << signCount << endl;
-    // TPR
-	float TPR = calcTPR(signCount, groundTruths.size());
-	std::cout << "TPR: " << TPR << endl;
-    // F1 score
-	float f1 = f1Score(detected.size(), groundTruths.size(), signCount);
-	std::cout << "F1 Score " << f1 << endl;
+	std::cout << "Number of detected Signs: " << detected.size() << std::endl; // from viola Jones
 
 
     //find max size of bounding box
@@ -119,17 +107,36 @@ int main( int argc, const char** argv ){
     }
 
 
+    
 	string houghOut = "hough/hough_" + splitString(fileName[fileName.size()-1], ".")[0] +".jpg";
 
-    vector<vector<int> > circles = hough_transform(image, thres_mag, direction, 20, max_r, 15, houghOut);
-    drawCircles(image, circles);
+    vector<vector<int> > circles = hough_transform(image, thres_mag, direction, 16, max_r, 15, houghOut);
+    
+    Mat circleImage = imread( imageName, CV_LOAD_IMAGE_COLOR );
+
+    drawCircles(circleImage, circles);
+    string circleFileName = "hough/circles_" + splitString(fileName[fileName.size()-1], ".")[0] +".jpg";
+	imwrite(circleFileName, circleImage);
 
 
-    drawDetected(image, detected, circles, 0.5);
+
+    vector<Rect> filteredSignCount = drawDetected(image, detected, circles, 0.4);
+    std::cout << "Number of filtered detections : " << filteredSignCount.size() << endl; //circles with viola jones
 
 	// Save Result Image
-	string imageOut = "hough/detected_" + splitString(fileName[fileName.size()-1], ".")[0] +".jpg";
+	string imageOut = "hough/filtered_" + splitString(fileName[fileName.size()-1], ".")[0] +".jpg";
 	imwrite(imageOut, image);
+
+    //signs successfully detected
+	float signCount = calcSignCount(filteredSignCount, groundTruths, 0.4); //compare filtered with ground truth
+	std::cout << "Number of successful filtered detections : " << signCount << endl;
+    // TPR
+	float TPR = calcTPR(signCount, groundTruths.size());
+	std::cout << "TPR: " << TPR << endl;
+    // F1 score
+	float f1 = f1Score(filteredSignCount.size(), groundTruths.size(), signCount);
+	std::cout << "F1 Score " << f1 << endl;
+
 
 	return 0;
 }
@@ -139,21 +146,27 @@ Rect convCircle2Rect(vector<int> circle){
 }
 
 
-void drawDetected(Mat image, vector<Rect> &signs,vector<vector<int> > &houghCircle, float iou_thres){
-	int signCount = 0;
+vector<Rect> drawDetected(Mat image, vector<Rect> &signs,vector<vector<int> > &houghCircle, float iou_thres){
+    vector<Rect> rects;
 	for (int j = 0; j < houghCircle.size(); j++){
-
+        float maxIOU = 0;
+        Rect maxRect;
         Rect houghRect = convCircle2Rect(houghCircle[j]);
 		for( int i = 0; i < signs.size(); i++ ){
             float iouVal = max(iou(houghRect, signs[i]), iou(signs[i], houghRect));
-			if (iouVal > iou_thres){
-		        rectangle(image, Point(signs[i].x, signs[i].y), Point(signs[i].x + signs[i].width, signs[i].y + signs[i].height), Scalar( 0, 255, 0 ), 2);
-
-				signCount ++;
-				break;
-			}
+            if (maxIOU < iouVal){
+                maxIOU = iouVal;
+                maxRect = signs[i];
+            }
 		}
+
+        if (maxIOU > iou_thres){
+            rectangle(image, Point(maxRect.x, maxRect.y), Point(maxRect.x + maxRect.width, maxRect.y + maxRect.height), Scalar( 0, 255, 0 ), 2);
+            rects.push_back(maxRect);
+        }
 	}
+
+    return rects;
 
 }
 
@@ -485,8 +498,6 @@ vector<vector<int> > hough_circles(Mat &input, int r_min, int r_max, double thre
 				int ys = circle[1];
 				int rs = circle[2];
 
-                std::cout << xs;
-
 				//equation of a circle (x'-x)^2+(y'-y)^2 = r^2 were x & y are center
 				if(!(pow((xs-x),2) + pow((ys-y),2) > pow(rs,2))) {
 					test_pass = false;
@@ -530,18 +541,7 @@ void read_csv(string filePath, vector<Rect> &groundTruths, Mat frame ){
 }
 
 float iou(Rect truth, Rect detected){
-
-	float height = min(truth.y + truth.height, detected.y + detected.height) - max(truth.y, detected.y);
-	float width = min(truth.x + truth.width, detected.x + detected.width) - max(truth.x, detected.x);
-	float intersect = height*width;
-
-    if (width < 0 || height < 0)return 0;
-
-	float unionArea = truth.height*truth.width + detected.height*detected.width - intersect;
-
-	return intersect/unionArea;
-
-    // return (truth & detected).area() / (float) (detected | truth).area();
+    return (truth & detected).area() / (float) (detected | truth).area();
 }
 
 float calcSignCount(vector<Rect> &signs, vector<Rect> &groundTruths, float iou_thres){
