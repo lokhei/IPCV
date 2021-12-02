@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////
 //
-// COMS30121 - face.cpp
+// COMS30121 - hough_noEntry.cpp
 //
 /////////////////////////////////////////////////////////////////////////////
 
@@ -24,13 +24,14 @@ void GaussianBlur(cv::Mat &input, int size,cv::Mat &blurredOutput);
 void threshold(Mat &input, int threshold, Mat &output);
 vector<vector<int> > hough_transform(Mat &input, Mat &mag, Mat &direction, int r_min, int r_max, double threshold, string fileName);
 void drawCircles(Mat &input, vector<vector<int> > circles);
-void detectAndDisplay( Mat frame, vector<Rect> &faces );
+void detectAndDisplay( Mat frame, vector<Rect> &signs );
 void read_csv(string name, vector<Rect> &groundTruths, Mat frame );
 float iou(Rect truth, Rect detected);
-float calcFaceCount(vector<Rect> &faces, vector<Rect> &groundTruths, float iou_thres);
-float calcTPR(int faceCount, int truthsSize);
-float f1Score(int faceSize, int truthSize, int faceCount);
+float calcSignCount(vector<Rect> &signs, vector<Rect> &groundTruths, float iou_thres);
+float calcTPR(int signCount, int truthsSize);
+float f1Score(int signSize, int truthSize, int signCount);
 vector<string> splitString(string s, string delimiter);
+void drawDetected(Mat image, vector<Rect> &signs, vector<vector<int> > &houghCircle, float iou_thres);
 
 /** Global variables */
 String cascade_name = "NoEntrycascade/cascade.xml";
@@ -40,40 +41,20 @@ CascadeClassifier cascade;
 /** @function main */
 int main( int argc, const char** argv ){
     const char* imageName = argv[1];
+    vector<string> fileName = splitString(imageName, "/");
 
-	// 1. Read Input Image
-	Mat frame = imread(imageName, CV_LOAD_IMAGE_COLOR);
+    Mat image = imread( imageName, CV_LOAD_IMAGE_COLOR );
 
-	// 2. Load the Strong Classifier in a structure called `Cascade'
+   
+	// Load the Strong Classifier in a structure called `Cascade'
 	if( !cascade.load( cascade_name ) ){ printf("--(!)Error loading\n"); return -1; };
 
     // read in and draw groundTruth
     vector<Rect> groundTruths;
-	read_csv(imageName, groundTruths, frame);
+	read_csv(imageName, groundTruths, image);
 
-	// 3. Detect Faces and Display Result
-	vector<Rect> faces;
-	detectAndDisplay(frame, faces);
-	std::cout << "Number of Faces: " << faces.size() << std::endl;
+	
 
-    
-
-	//faces successfully detected
-	float faceCount = calcFaceCount(faces, groundTruths, 0.4);
-	std::cout << "Number of successful faces : " << faceCount << endl;
-    // TPR
-	float TPR = calcTPR(faceCount, groundTruths.size());
-	std::cout << "TPR: " << TPR << endl;
-    // F1 score
-	float f1 = f1Score(faces.size(), groundTruths.size(), faceCount);
-	std::cout << "F1 Score " << f1 << endl;
-
-	// imwrite( "detected.jpg", frame );
-
-
-
-
-    Mat image = imread( imageName, 1 );
 
     if( argc != 2 || !image.data ){
         printf( " No image data \n " );
@@ -96,31 +77,86 @@ int main( int argc, const char** argv ){
 
 
     //normalise result
-    Mat r_magnitude(image.size(), CV_8UC1, Scalar(0));
+    Mat r_magnitude(image.size(), CV_8UC1);
     normalize(magnitude,r_magnitude,0,255,NORM_MINMAX);
 
-    //threshold magnitude
+
+    imwrite( "SobelMag.jpg", r_magnitude );
+	
+    //threshold
     Mat thres_mag = imread("SobelMag.jpg", 1);
     Mat gray_thres;
     cvtColor( thres_mag, gray_thres, CV_BGR2GRAY );
     threshold(gray_thres, 50, thres_mag);
 
-    vector<string> fileName = splitString(imageName, "/");
+	string thresName = "hough/thresGrad_" + splitString(fileName[fileName.size()-1], ".")[0] +".jpg";
+    imwrite( thresName, thres_mag );
+
+
+    // Detect signs and Display Result
+	vector<Rect> detected;
+	detectAndDisplay(image, detected);
+	std::cout << "Number of detected Signs: " << detected.size() << std::endl;
+
+    
+
+	//signs successfully detected
+	float signCount = calcSignCount(detected, groundTruths, 0.4);
+	std::cout << "Number of successful detections : " << signCount << endl;
+    // TPR
+	float TPR = calcTPR(signCount, groundTruths.size());
+	std::cout << "TPR: " << TPR << endl;
+    // F1 score
+	float f1 = f1Score(detected.size(), groundTruths.size(), signCount);
+	std::cout << "F1 Score " << f1 << endl;
+
+
+    //find max size of bounding box
+    float max_r = 0;
+	for (int i = 0; i < detected.size(); i++){
+        float sign_maxR =  sqrt(pow(detected[i].width,2)+ pow(detected[i].height,2));
+        if (sign_maxR > max_r) max_r = sign_maxR;
+    }
+
+
 	string houghOut = "hough/hough_" + splitString(fileName[fileName.size()-1], ".")[0] +".jpg";
 
-    //perform hough transform
-    vector<vector<int> > circles = hough_transform(frame, thres_mag, direction, 5, 100, 20, houghOut);
-    // vector<vector<int> > circles = hough_transform(image, thres_mag, direction, 5, 70, 14);
+    vector<vector<int> > circles = hough_transform(image, thres_mag, direction, 20, max_r, 15, houghOut);
+    drawCircles(image, circles);
 
-    drawCircles(frame, circles);
+
+    drawDetected(image, detected, circles, 0.5);
 
 	// Save Result Image
 	string imageOut = "hough/detected_" + splitString(fileName[fileName.size()-1], ".")[0] +".jpg";
-	imwrite(imageOut, frame);
-
+	imwrite(imageOut, image);
 
 	return 0;
 }
+
+Rect convCircle2Rect(vector<int> circle){
+    return Rect(Point(circle[1]+circle[2], circle[0]+circle[2]),Point(circle[1]-circle[2], circle[0]-circle[2]));
+}
+
+
+void drawDetected(Mat image, vector<Rect> &signs,vector<vector<int> > &houghCircle, float iou_thres){
+	int signCount = 0;
+	for (int j = 0; j < houghCircle.size(); j++){
+
+        Rect houghRect = convCircle2Rect(houghCircle[j]);
+		for( int i = 0; i < signs.size(); i++ ){
+            float iouVal = max(iou(houghRect, signs[i]), iou(signs[i], houghRect));
+			if (iouVal > iou_thres){
+		        rectangle(image, Point(signs[i].x, signs[i].y), Point(signs[i].x + signs[i].width, signs[i].y + signs[i].height), Scalar( 0, 255, 0 ), 2);
+
+				signCount ++;
+				break;
+			}
+		}
+	}
+
+}
+
 
 
 
@@ -138,11 +174,6 @@ int ***malloc3dArray(int dim1, int dim2, int dim3) {
     }
     return array;
 }
-
-
-
-
-
 
 
 void sobel(cv::Mat &input, cv::Mat &deriv_x, cv::Mat &deriv_y, cv::Mat &direction, cv::Mat &magnitude) {
@@ -256,7 +287,7 @@ vector<vector<int> > hough_transform(Mat &image, Mat &mag,  Mat &direction, int 
                     maxRadius = r;
 				}
             }
-			
+
 			for(int i = 0; i < circles.size(); i++) {
 				vector<int> circle = circles[i];
 				int xc = circle[0];
@@ -285,6 +316,7 @@ vector<vector<int> > hough_transform(Mat &image, Mat &mag,  Mat &direction, int 
     return circles;
 }
 
+
 void drawCircles(Mat &input, vector<vector<int> > circles) {
 
 	for(int i = 0; i < circles.size(); i++) {
@@ -294,9 +326,6 @@ void drawCircles(Mat &input, vector<vector<int> > circles) {
 		int radius = c[2];
 		circle(input, center, radius, Scalar(128, 0, 128), 2, 8, 0);
 	}
-
-	// imwrite("detected.jpg", input);
-
 }
 
 
@@ -340,7 +369,7 @@ void GaussianBlur(cv::Mat &input, int size, cv::Mat &blurredOutput){
         kernelRadiusX, kernelRadiusX, kernelRadiusY, kernelRadiusY,
         cv::BORDER_REPLICATE );
 
-    // now we can do the convolution
+    // now we can do the Colution
     for ( int i = 0; i < input.rows; i++ )
     {	
         for( int j = 0; j < input.cols; j++ )
@@ -385,6 +414,95 @@ vector<string> splitString(string s, string delimiter){
 	return tokens;
 }
 
+
+vector<vector<int> > hough_circles(Mat &input, int r_min, int r_max, double threshold, Mat &direction, string imageNum) {
+
+	int ***hough_space = malloc3dArray(input.rows, input.cols, r_max);
+
+    for (int i = 0; i < input.rows; i++) {
+        for (int j = 0; j < input.cols; j++) {
+            for (int r = 0; r < r_max; r++) {
+                hough_space[i][j][r] = 0;
+            }
+        }
+    }
+
+	//-- Make the hough space -- //
+    for (int y = 0; y < input.rows; y++) {
+        for (int x = 0; x < input.cols; x++) {
+			if(input.at<uchar>(y,x) == 255) {
+				for (int r = 0; r < r_max; r++) {
+					int yc = int(r * sin(direction.at<float>(y,x)));
+					int xc = int(r * cos(direction.at<float>(y,x)));
+
+					int a = x - xc;
+					int b = y - yc;
+					if(a >= 0 && a < input.cols && b >= 0 && b < input.rows) {
+						hough_space[b][a][r] ++;
+					}
+
+					int c = x + xc;
+					int d = y + yc;
+					if(c >= 0 && c < input.cols && d >= 0 && d < input.rows) {
+						hough_space[d][c][r] ++;
+					}
+				}
+			}
+        }
+    }
+
+	Mat hough_output(input.rows, input.cols, CV_32FC1);
+    for (int y = 0; y < input.rows; y++) {
+        for (int x = 0; x < input.cols; x++) {
+            for (int r = r_min; r < r_max; r++) {
+                hough_output.at<float>(y,x) += hough_space[y][x][r];
+            }
+ 
+        }
+    }
+
+    imwrite( "goundTruth_NoEntry_Hough/detected_NE_" + imageNum + "/hough_space.jpg", hough_output );
+
+	//--- get the circles ---//
+	vector<vector<int> > circles;
+	for (int y = 0; y < input.rows; y++) {
+        for (int x = 0; x < input.cols; x++) {
+			bool test_pass = true;
+		
+			int max_r = 0;
+			int currentMax = 0;
+			
+			for (int r = r_min; r < r_max; r++) {
+				if ( hough_space[y][x][r] > currentMax) {
+					currentMax = hough_space[y][x][r];
+					max_r = r;
+				}	
+			}
+				
+			for(int i = 0; i < circles.size(); i++) {
+				vector<int> circle = circles[i];
+				int xs = circle[0];
+				int ys = circle[1];
+				int rs = circle[2];
+
+                std::cout << xs;
+
+				//equation of a circle (x'-x)^2+(y'-y)^2 = r^2 were x & y are center
+				if(!(pow((xs-x),2) + pow((ys-y),2) > pow(rs,2))) {
+					test_pass = false;
+				}
+			}
+			if(hough_space[y][x][max_r] > threshold && test_pass) {
+				vector<int> circle;
+				circle.push_back(x);
+				circle.push_back(y);
+				circle.push_back(max_r);
+				circles.push_back(circle);
+			}
+        }
+    }
+	return circles;
+}
 void read_csv(string filePath, vector<Rect> &groundTruths, Mat frame ){
 
 	ifstream file("noEntry_labels.csv");
@@ -412,48 +530,52 @@ void read_csv(string filePath, vector<Rect> &groundTruths, Mat frame ){
 }
 
 float iou(Rect truth, Rect detected){
+
 	float height = min(truth.y + truth.height, detected.y + detected.height) - max(truth.y, detected.y);
 	float width = min(truth.x + truth.width, detected.x + detected.width) - max(truth.x, detected.x);
-    if (height < 0 || height < 0) return 0;
 	float intersect = height*width;
+
+    if (width < 0 || height < 0)return 0;
 
 	float unionArea = truth.height*truth.width + detected.height*detected.width - intersect;
 
 	return intersect/unionArea;
+
+    // return (truth & detected).area() / (float) (detected | truth).area();
 }
 
-float calcFaceCount(vector<Rect> &faces, vector<Rect> &groundTruths, float iou_thres){
-	int faceCount = 0;
+float calcSignCount(vector<Rect> &signs, vector<Rect> &groundTruths, float iou_thres){
+	int signCount = 0;
 	for (int j = 0; j < groundTruths.size(); j++){
 
-		for( int i = 0; i < faces.size(); i++ ){
-			if (iou(groundTruths[j], faces[i]) > iou_thres){
-				faceCount ++;
+		for( int i = 0; i < signs.size(); i++ ){
+			if (iou(groundTruths[j], signs[i]) > iou_thres){
+				signCount ++;
 				break;
 			}
 		}
 	}
-	return faceCount;
+	return signCount;
 }
 
 
 
-float calcTPR(int faceCount,  int truthsSize){
+float calcTPR(int signCount,  int truthsSize){
 	if (truthsSize == 0) return 0;
-	return faceCount/float(truthsSize);
+	return signCount/float(truthsSize);
 }
 
-float f1Score(int faceSize, int truthSize, int faceCount){
-	float fp = faceSize - faceCount;
-	float fn = truthSize - faceCount;
-	float f1 = faceCount/(faceCount+0.5*(fp+fn));
+float f1Score(int signSize, int truthSize, int signCount){
+	float fp = signSize - signCount;
+	float fn = truthSize - signCount;
+	float f1 = signCount/(signCount+0.5*(fp+fn));
 
 	return f1;
 }
 
 
 /** @function detectAndDisplay */
-void detectAndDisplay( Mat frame, vector<Rect> &faces){
+void detectAndDisplay( Mat frame, vector<Rect> &signs){
 	Mat frame_gray;
 
 	// 1. Prepare Image by turning it into Grayscale and normalising lighting
@@ -461,13 +583,11 @@ void detectAndDisplay( Mat frame, vector<Rect> &faces){
 	equalizeHist( frame_gray, frame_gray );
 
 	// 2. Perform Viola-Jones Object Detection 
-	cascade.detectMultiScale( frame_gray, faces, 1.1, 1, 0|CV_HAAR_SCALE_IMAGE, Size(10, 10), Size(300,300) );
+	cascade.detectMultiScale( frame_gray, signs, 1.1, 1, 0|CV_HAAR_SCALE_IMAGE, Size(10, 10), Size(300,300) );
 
-
-	// 4. Draw box around faces found
-	for( int i = 0; i < faces.size(); i++ )
-	{
-		rectangle(frame, Point(faces[i].x, faces[i].y), Point(faces[i].x + faces[i].width, faces[i].y + faces[i].height), Scalar( 0, 255, 0 ), 2);
-	}
+    // for( int i = 0; i < signs.size(); i++ )
+	// {
+	// 	rectangle(frame, Point(signs[i].x, signs[i].y), Point(signs[i].x + signs[i].width, signs[i].y + signs[i].height), Scalar( 128, 0, 128 ), 2);
+	// }
 
 }
