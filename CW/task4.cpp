@@ -24,7 +24,7 @@ void GaussianBlur(cv::Mat &input, int size,cv::Mat &blurredOutput);
 void threshold(Mat &input, int threshold, Mat &output);
 vector<vector<int> > hough_transform(Mat &input, Mat &mag, Mat &direction, int r_min, int r_max, double threshold, string fileName);
 void drawCircles(Mat &input, vector<vector<int> > circles);
-void detectAndDisplay( Mat frame, vector<Rect> &signs );
+void detectAndDisplay( Mat frame, Mat &drawImage, vector<Rect> &signs );
 void read_csv(string name, vector<Rect> &groundTruths, Mat frame );
 float iou(Rect truth, Rect detected);
 float calcSignCount(vector<Rect> &signs, vector<Rect> &groundTruths, float iou_thres);
@@ -85,21 +85,22 @@ int main( int argc, const char** argv ){
     threshold(gray_thres, 50, thres_mag);
 
 	string thresName = "hough/thresMag_" + splitString(fileName[fileName.size()-1], ".")[0] +".jpg"; 
-    imwrite( thresName, thres_mag ); 
+    imwrite( thresName, thres_mag );  //save thresholded mag image
 
 
 
-    // read in and draw groundTruth
-    vector<Rect> groundTruths;
-	read_csv(imageName, groundTruths, image);
+    
 
 
     // Detect signs and Display Result
+    Mat drawImage = imread( imageName, CV_LOAD_IMAGE_COLOR );
 	vector<Rect> detected;
-	detectAndDisplay(image, detected);
+	detectAndDisplay(image, drawImage, detected);
+    string detectedOut = "hough/detected_" + splitString(fileName[fileName.size()-1], ".")[0] +".jpg";
+	imwrite(detectedOut, drawImage); //save viola-jones detected image
 	std::cout << "Number of detected Signs: " << detected.size() << std::endl; // from viola Jones
 
-
+    
     //find max size of bounding box
     float max_r = 0;
 	for (int i = 0; i < detected.size(); i++){
@@ -113,20 +114,22 @@ int main( int argc, const char** argv ){
 
     vector<vector<int> > circles = hough_transform(image, thres_mag, direction, 16, max_r, 15, houghOut);
     
-    Mat circleImage = imread( imageName, CV_LOAD_IMAGE_COLOR );
+    Mat circleImage = imread( imageName, CV_LOAD_IMAGE_COLOR ); 
 
     drawCircles(circleImage, circles);
     string circleFileName = "hough/circles_" + splitString(fileName[fileName.size()-1], ".")[0] +".jpg";
-	imwrite(circleFileName, circleImage);
+	imwrite(circleFileName, circleImage); //save hough circles image
 
+    // read in and draw groundTruth
+    vector<Rect> groundTruths;
+	read_csv(imageName, groundTruths, image);
 
-
-    vector<Rect> filteredSignCount = drawDetected(image, detected, circles, 0.4);
+    vector<Rect> filteredSignCount = drawDetected(image, detected, circles, 0.4); //filter viola with the circles
     std::cout << "Number of filtered detections : " << filteredSignCount.size() << endl; //circles with viola jones
 
 	// Save Result Image
 	string imageOut = "hough/filtered_" + splitString(fileName[fileName.size()-1], ".")[0] +".jpg";
-	imwrite(imageOut, image);
+	imwrite(imageOut, image); //save filtered image with ground truth
 
     //signs successfully detected
 	float signCount = calcSignCount(filteredSignCount, groundTruths, 0.4); //compare filtered with ground truth
@@ -576,19 +579,22 @@ float f1Score(int signSize, int truthSize, int signCount){
 
 
 /** @function detectAndDisplay */
-void detectAndDisplay( Mat frame, vector<Rect> &signs){
+void detectAndDisplay( Mat frame, Mat &drawImage,vector<Rect> &signs){
 	Mat frame_gray;
+	Mat blurred;
+
 
 	// 1. Prepare Image by turning it into Grayscale and normalising lighting
 	cvtColor( frame, frame_gray, CV_BGR2GRAY );
 	equalizeHist( frame_gray, frame_gray );
 
+
 	// 2. Perform Viola-Jones Object Detection 
 	cascade.detectMultiScale( frame_gray, signs, 1.1, 1, 0|CV_HAAR_SCALE_IMAGE, Size(10, 10), Size(300,300) );
 
-    // for( int i = 0; i < signs.size(); i++ )
-	// {
-	// 	rectangle(frame, Point(signs[i].x, signs[i].y), Point(signs[i].x + signs[i].width, signs[i].y + signs[i].height), Scalar( 128, 0, 128 ), 2);
-	// }
+    for( int i = 0; i < signs.size(); i++ )
+	{
+		rectangle(drawImage, Point(signs[i].x, signs[i].y), Point(signs[i].x + signs[i].width, signs[i].y + signs[i].height), Scalar( 0, 255, 0 ), 2);
+	}
 
 }
