@@ -24,8 +24,8 @@ TPR: 0
 F1 Score -nan
 
 NoEntry4.bmp:
-Number of Faces: 25
-Number of faces : 5
+Number of Detected Faces: 25
+Number of Ground Truth faces : 5
 TPR: 1
 F1 Score 0.333333
 

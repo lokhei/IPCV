@@ -1,4 +1,4 @@
-No_entry/NoEntry1.bmp
+No_entry/NoEntry0.bmp
 Number of detected Signs: 20
 circles: 2
 Number of filtered detections : 2

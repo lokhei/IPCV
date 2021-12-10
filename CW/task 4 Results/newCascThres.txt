@@ -65,8 +65,12 @@ Number of successful filtered detections : 3
 TPR: 0.5
 F1 Score 0.666667
 bash-4.2$ ./a.out No_entry/NoEntry9.bmp 
-Number of detected Signs: 0
-^Z
+Number of detected Signs: 5
+circles: 1
+Number of filtered detections : 1
+Number of successful filtered detections : 1
+TPR: 0.5
+F1 Score 0.666667
 [3]+  Stopped                 ./a.out No_entry/NoEntry9.bmp
 bash-4.2$ ./a.out No_entry/NoEntry10.bmp 
 Number of detected Signs: 2
