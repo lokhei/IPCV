@@ -1,24 +1,24 @@
 Task 1 results:
 NoEntry0.bmp:
-Number of Faces: 12
+Number of Detected Faces: 12
 Number of faces : 0
 TPR: 0
 F1 Score 0
 
 NoEntry1.bmp:
-Number of Faces: 7
+Number of Detected  Faces: 7
 Number of faces : 1
 TPR: 1
 F1 Score 0.25
 
 NoEntry2.bmp:
-Number of Faces: 13
+Number of Detected Faces: 13
 Number of faces : 2
 TPR: 1
 F1 Score 0.266667
 
 NoEntry3.bmp:
-Number of Faces: 0
+Number of Detected Faces: 0
 Number of faces : 0
 TPR: 0
 F1 Score -nan
@@ -30,68 +30,68 @@ TPR: 1
 F1 Score 0.333333
 
 NoEntry5.bmp:
-Number of Faces: 4
+Number of Detected Faces: 4
 Number of faces : 1
 TPR: 1
 F1 Score 0.4
 
 NoEntry6.bmp:
-Number of Faces: 6
+Number of Detected Faces: 6
 Number of faces : 0
 TPR: 0
 F1 Score 0
 
 NoEntry7.bmp:
-Number of Faces: 8
+Number of Detected Faces: 8
 Number of faces : 1
 TPR: 0.5
 F1 Score 0.2
 
 NoEntry8.bmp:
-umber of Faces: 1
+umber of Detected Faces: 1
 Number of faces : 0
 TPR: 0
 F1 Score 0
 
 
 NoEntry9.bmp:
-umber of Faces: 2
+umber of Detected Faces: 2
 Number of faces : 0
 TPR: 0
 F1 Score 0
 
 NoEntry10.bmp:
-Number of Faces: 6
+Number of Detected Faces: 6
 Number of faces : 0
 TPR: 0
 F1 Score 0
 
 NoEntry11.bmp:
-Number of Faces: 10
+Number of Detected Faces: 10
 Number of faces : 2
 TPR: 1
 F1 Score 0.333333
 
 NoEntry12.bmp:
-umber of Faces: 19
+umber of Detected Faces: 19
 Number of faces : 0
 TPR: 0
 F1 Score 0
 
 NoEntry13.bmp:
-Number of Faces: 1
+Number of Detected Faces: 1
 Number of faces : 0
 TPR: 0
 F1 Score 0
 
 NoEntry14.bmp:
-Number of Faces: 4
+Number of Detected Faces: 4
 Number of faces : 0
 TPR: 0
 F1 Score 0
 
 NoEntry15.bmp:
-Number of Faces: 1
+Number of Detected Faces: 1
 Number of faces : 0
 TPR: 0
 F1 Score 0

@@ -1,6 +1,7 @@
 /////////////////////////////////////////////////////////////////////////////
 //
 // COMS30121 - face.cpp
+// Task 1: Use pre-build frontal face detector and compute IOU, TPR, F1-SCORE
 //
 /////////////////////////////////////////////////////////////////////////////
 
@@ -48,10 +49,10 @@ int main( int argc, const char** argv )
 	// 3. Detect Faces and Display Result
 	vector<Rect> faces;
 	detectAndDisplay(frame, faces);
-	std::cout << "Number of Faces: " << faces.size() << std::endl;
+	std::cout << "Number of detected Faces: " << faces.size() << std::endl;
 	//faces successfully detected
 	float faceCount = calcFaceCount(faces, groundTruths, 0.4);
-	std::cout << "Number of faces : " << faceCount << endl;
+	std::cout << "Number of successfully detected faces : " << faceCount << endl;
 
 	float TPR = calcTPR(faceCount, groundTruths.size());
 	std::cout << "TPR: " << TPR << endl;
@@ -88,8 +89,6 @@ void read_csv(string filePath, vector<Rect> &groundTruths, Mat frame ){
 	vector<string> fileName = splitString(filePath, "/");
 
 	string imageName = splitString(fileName[fileName.size()-1], ".")[0];
-
-
 
 	while(getline(file, line)){
 
